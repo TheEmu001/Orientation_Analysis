@@ -21,10 +21,11 @@ start_frame = 120 #frame to start at
 pick_frame = 30 # pick every __th frame
 
 fps = 60
-no_seconds = 30
+no_seconds = 1
 
 
-DLCscorer = 'DLC_resnet50_BigBinTopSep17shuffle1_250000'
+# DLCscorer = 'DLC_resnet50_BigBinTopSep17shuffle1_250000' #scorer for top down videos
+DLCscorer= 'DLC_resnet50_SideViewNov1shuffle1_180000' #scorer for side videos
 
 
 def orientation(video):
@@ -47,9 +48,10 @@ def orientation(video):
 
     data = pd.DataFrame(data=None)
     data['length'] = Dataframe[bpt]['length'].values
-    raw_angles =Dataframe[bpt]['orientation'].values
+    raw_angles =(Dataframe[bpt]['orientation'].values) - 90
     data['orientation_angle'] = raw_angles
     raw_angles = pd.Series(raw_angles)
+    raw_angles = raw_angles.abs()
     orientation_avg = raw_angles.rolling(fps*no_seconds).mean()
     time = np.arange(len(data['orientation_angle'])) * 1. / fps  # time that is 1/60 sec
     data['time'] = time / 60
@@ -57,7 +59,7 @@ def orientation(video):
 
 
     query = video
-    stopwords = ['top', 'down', 'top down']
+    stopwords = ['top', 'down', 'top down', 'side', 'view', 'side view', 'sideview']
     querywords = query.split('_')
     resultwords = [word for word in querywords if word.lower() not in stopwords]
     legend_name = ' '.join(resultwords)
@@ -68,24 +70,31 @@ def orientation(video):
 
 if __name__ == '__main__':
     print("Hi")
-    orientation(video='Saline_Ai14_OPRK1_C2_F1_Top_Down')
-    orientation(video='U50_Ai14_OPRK1_C1_F1_Top Down')
-    orientation(video='NORBNI_Saline_Ai14_OPRK1_C2_F1_Top Down')
-    orientation(video='NORBNI_U50_Ai14_OPRK1_C2_F1_Top Down')
-    orientation(video='Nalt_U50_Ai14_OPRK1_C1_F1_Top Down')
+    orientation(video='Saline_Ai14_OPRK1_C1_F0_side view')
+    orientation(video='U50_Ai14_OPRK1_C1_F0_side view')
+    orientation(video='Naltr_U50_Ai14_OPRK1_C2_F0_side view')
+    orientation(video='NORBNI_U50_Ai14_OPRK1_C2_F0_s')
+    orientation(video='NORBNI_Saline_Ai14_OPRK1_C2_F0_side view')
+    orientation(video='U50_Ai14_OPRK1_C1_M4_side view')
 
-
-
-
-
-    # saline avg
+    """saline avg"""
     saline_values = all_data.loc[:,[
-        'Saline Ai14 OPRK1 C2 F1_orientation'
+        'Saline Ai14 OPRK1 C1 F0_orientation'
     ]]
     saline_mean = saline_values.mean(axis=1)
     saline_time = (saline_mean.index) * (1. / fps) / 60
     saline_sem = stats.sem(saline_mean)
+    plt.plot(saline_time, saline_mean, label='Saline+Saline')
 
-    plt.plot(saline_time, saline_mean)
+    """u50 avg"""
+    u50_values = all_data.loc[:, [
+        'U50 Ai14 OPRK1 C1 F0_orientation',
+        'U50 Ai14 OPRK1 C1 M4_orientation'
+                                 ]]
+    u50_mean = u50_values.mean(axis=1)
+    u50_time = (u50_mean.index) * (1./fps)/60
+    u50_sem = stats.sem(u50_mean)
+    plt.plot(u50_time, u50_mean, label='Saline+U50')
+
     leg = plt.legend(loc='upper right', fontsize=12, frameon=False)
     plt.show()
